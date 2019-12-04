@@ -14,6 +14,11 @@ Shape.prototype.getArea = function() {
 	return this._sideLengths[0] * this._sideLengths[1];
 };
 
+// Shape.prototype.toStrnig = function() {
+// 	return '[object " + this._name + "]';
+// };
+// nie działa w ES6
+
 function Rectangle(sideLengths) {
 	Shape.call(this, [ sideLengths[0], sideLengths[1], sideLengths[0], sideLengths[1] ]);
 	this._name = 'Prostokąt';
