@@ -7,7 +7,6 @@ function Shape(sideLengths) {
 }
 
 function sayHello() {
-	// console.log(this);
 	return this.firstName + ' ' + this.lastName;
 }
 
