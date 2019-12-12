@@ -1,5 +1,4 @@
 const xhr = new XMLHttpRequest();
-
 console.log(xhr.readyState);
 
 xhr.open('GET', 'about-us.html', true);
