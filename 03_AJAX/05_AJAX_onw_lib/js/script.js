@@ -8,22 +8,21 @@ function AJAX(config) {
 
 	this._assigneEvents();
 
-	this._open();
-	this._assigneUserHeaders();
-
-	this._send();
+	this._beforsend();
 }
 
 AJAX.prototype._extendOptions = function(config) {
 	let defaultConfig = JSON.parse(JSON.stringify(this._defaultConfig));
-	// console.log(defaultConfig);
+
 	for (let key in defaultConfig) {
-		// console.log(key);
 		if (key in config) {
-			defaultConfig[key] = config[key];
+			continue;
 		}
+
+		config[key] = defaultConfig[key];
 	}
-	return defaultConfig;
+
+	return config;
 };
 
 AJAX.prototype._assigneEvents = function() {
@@ -50,20 +49,62 @@ AJAX.prototype._open = function() {
 		this._config.options.password
 	);
 
+	this._xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 	this._xhr.timeout = this._config.timeout;
 };
 
-AJAX.prototype._send = function() {
-	this._xhr.send();
+AJAX.prototype._beforsend = function() {
+	let isData = Object.keys(this._config.data).length > 0;
+	let data = null;
+
+	if (this._config.type.toUpperCase() === 'POST' && isData) {
+		data = this._serializeFormData(this._config.data);
+	} else if (this._config.type.toUpperCase() === 'GET' && isData) {
+		this._config.url += '?' + this._serializeData(this._config.data);
+	}
+
+	this._open();
+	this._assigneEvents();
+	this._send(data);
+};
+
+AJAX.prototype._send = function(data) {
+	this._xhr.send(data);
 };
 
 AJAX.prototype._handleResponse = function(e) {
-	if (this._xhr.readyState === 4 && this._xhr.status === 200) {
-		console.log('jest odpowiedź');
+	if (this._xhr.readyState === 4 && this._xhr.status >= 200 && this._xhr.status < 400) {
+		if (typeof this._config.success === 'function') {
+			this._config.success(this._xhr.response, this._xhr);
+		}
+	} else if (this._xhr.readyState === 4 && this._xhr.status >= 400) {
+		this._handleError();
 	}
 };
 
-AJAX.prototype._handleError = function(e) {};
+AJAX.prototype._handleError = function(e) {
+	if (typeof this._config.faliure === 'function') {
+		this._config.faliure(this._xhr);
+	}
+};
+
+AJAX.prototype._serializeData = function(data) {
+	let serialized = '';
+
+	for (let key in data) {
+		serialized += key + '=' + encodeURIComponent(data[key]) + '&';
+	}
+
+	return serialized.slice(0, serialized.length - 1);
+};
+
+AJAX.prototype._serializeFormData = function(data) {
+	let serialized = new FormData();
+	for (let key in data) {
+		serialized.append(key, data[key]);
+	}
+	return serialized;
+};
 
 AJAX.prototype._defaultConfig = {
 	type: 'GET',
@@ -79,7 +120,7 @@ AJAX.prototype._defaultConfig = {
 };
 
 AJAX({
-	type: 'POST',
+	type: 'GET',
 	url: 'odbierz.php',
 	data: {
 		firstName: 'Piotr',
@@ -89,7 +130,7 @@ AJAX({
 		'X-My-Header': '123#asdqwe'
 	},
 	success: function(response, xhr) {
-		console.log('Udało się! Status: ' + xhr.status);
+		console.log(response);
 	},
 	faliure: function(xhr) {
 		console.log('Wystąpił błąd. Status: ' + xhr.status);
